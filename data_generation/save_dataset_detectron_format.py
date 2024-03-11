@@ -1,3 +1,8 @@
+'''
+generation of ground-truth labels and the Spherical Projection image 
+from the CARLA simulation data (data_generation/open3d_lidar_cuboids_skeleton.py)
+'''
+
 from detectron2.data import DatasetCatalog
 #from mydataset import load_mydataset_json
 #from model_config import cfg

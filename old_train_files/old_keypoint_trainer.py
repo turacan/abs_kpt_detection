@@ -9,7 +9,7 @@ from detectron2.evaluation import COCOEvaluator
 from custom_mapper import custom_mapper
 from eval.custom_coco_eval import COCOCustomEvaluator
 
-from helper.hooks import LossEvalHook
+from old_train_files.hooks import LossEvalHook
 from detectron2.data import (
     DatasetMapper,
     DatasetCatalog,

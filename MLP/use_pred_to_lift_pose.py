@@ -8,13 +8,16 @@ import torch
 import cv2
 import os
 sys.path.append("/workspace/repos/")
-from custom_mapper import custom_mapper
-from save_dataset_detectron_format import calculate_projection_matrix, MAX_SENSOR_RANGE, KINTREE_TABLE
+from twoD_pose_estimator.custom_mapper import custom_mapper
+from twoD_pose_estimator.start_training import setup_parameters, setup_config
+
+from data_generation.save_dataset_detectron_format import calculate_projection_matrix, MAX_SENSOR_RANGE, KINTREE_TABLE
 from utils.spherical import o3d_draw_skeleton
 from utils.fc_plots_eval import plot_mpjpe_boxplot
+
 import open3d as o3d
 
-from MLP.root_relative_distance_network import RelativeDistancePredictionNetwork, RootDistancePredictionNetwork, CorrectionNetwork, IntegratedPoseEstimationModel
+from MLP.abs_pose_lifting_network import RelativeDistancePredictionNetwork, RootDistancePredictionNetwork, CorrectionNetwork, IntegratedPoseEstimationModel
 
 try:
     with open("config/config.json", 'r') as f:
@@ -22,7 +25,7 @@ try:
 except Exception as ex:
     sys.exit("provided cfg file path not valid")
 
-from start_training import setup_parameters, setup_config
+
 
 
 DEVICE = "cpu"  # cuda:0
@@ -59,7 +62,7 @@ cfg.freeze()
 predictor = DefaultPredictor(cfg)
 
 # Get the metadata
-from registerDatasetCatalog import register_data
+from twoD_pose_estimator.registerDatasetCatalog import register_data
 register_data(input_path= "/workspace/data/dataset")
 
 

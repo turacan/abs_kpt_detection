@@ -5,7 +5,7 @@ from detectron2.utils.visualizer import Visualizer
 from detectron2.utils.visualizer import ColorMode
 
 from custom_mapper import custom_mapper
-from save_dataset_detectron_format import calculate_projection_matrix
+from data_generation.save_dataset_detectron_format import calculate_projection_matrix
 
 import cv2
 import json
