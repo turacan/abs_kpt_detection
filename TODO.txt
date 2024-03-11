@@ -1,0 +1,66 @@
+look at bbox definition sometiimes bbox go over whole image.
+problem:  one common issue is indeed objects that wrap around the boundaries. 
+These cases can be challenging because most object detection algorithms expect objects to be contained within a single bounding box.
+
+file: save_dataset_detectron_format.py
+
+solution:
+    create two bounding boxes for objects that straddle the image boundary, one on each side
+
+TODO:
+after augmentation, keypoints which are out of bounds are not in GT keypoint list, 
+suggestion: see kintree table (joint connection rule), calculate direction vector and look for most nearest point 
+on that vector, which inside image bounds.
+
+after mapper annotations which are out of bounds get Zero value assigned and also assigned label visibility to 0 (not visible)
+also the case with boundary objects which have entries on both image sides. 
+check horizontal height level and decide where usefull
+
+observation: further away objects mainly marked as occluded
+
+
+statistics: 
+with 50 images avg count of visible jnts 
+if (abs(diff_u) > 0) or (abs(diff_v) > 0): [ 4.1766643 11.8233357]   # every time 
+    if np.argwhere(np.array(keypoints_list[2::3])==1).size  > 5: occluded   44 instances
+        mean: 47.65909091
+        total: 2097.0
+
+if (abs(diff_u) > 2) or (abs(diff_v) > 2): [ 4.03470398 11.96529602]   # offset 2 pixels    # best result
+    if np.argwhere(np.array(keypoints_list[2::3])==1).size  > 5: occluded
+        mean: 46.13636364
+        total: 2030.0
+        
+
+if (abs(diff_u) > 200) or (abs(diff_v) > 200): [ 4.0715088 11.9284912] # no correction
+    if np.argwhere(np.array(keypoints_list[2::3])==1).size  > 5: occluded
+        mean: 48.52272727
+        total: 2135.0
+
+
+DEMO:
+1 show prediction.py
+2 ttrain_MPL.py visualizes GT kpts and its transformed 3D skeleton
+
+
+LIfting brauctman 2D , 3d
+reale daten zu verwenden und model anpassen
+
+
+
+TODO:
+
+in save_dataset_detectron_format:
+start at line 493. now correctly save objects that objects on both img edges are from begiing handeled as two instances
+
+concept:
+1       Iterate over bounding boxes in an image and compute range values for pixels inside each bounding box.
+2       For each bounding box, compute mode and standard deviation (excluding outliers) to define accepted range limits.
+3       For each keypoint in a bounding box, check if its range value falls within the accepted limits.
+4       If it doesn't, get the coordinates of surrounding pixels using an iterative offset and 
+        check if their range values fall within the accepted limits and are still inside the bounding box.
+5       If after checking all surrounding pixels within a maximum offset the range value still doesn't fall within the accepted limits,
+        assign it the default mode value.
+
+
+

@@ -1,0 +1,90 @@
+final jioint/bone structure:
+BONE_KEYS = [
+        'crl_hips__C',        # Pelvis              # 0
+        'crl_thigh__R',       # R_Hip               # 1
+        'crl_leg__R',         # R_Knee              # 2
+        'crl_foot__R',        # R_Ankle             # 3
+        'crl_thigh__L',       # L_Hip               # 4
+        'crl_leg__L',         # L_Knee              # 5
+        'crl_foot__L',        # L_Ankle             # 6
+        'crl_spine01__C',     # Torso               # 7
+        'crl_neck__C',        # Neck                # 8
+        'crl_Head__C',        # Head                # 9
+        'crl_arm__R',         # R_Shoulder          # 10
+        'crl_foreArm__R',     # R_Elbow             # 11
+        'crl_hand__R',        # R_Wrist             # 12
+        'crl_arm__L',         # L_Shoulder          # 13
+        'crl_foreArm__L',     # L_Elbow             # 14
+        'crl_hand__L'         # L_Wrist             # 15
+]
+
+# bone/ joints connections
+KINTREE_TABLE = np.array([ 
+    [0, 1],     # Pelvis -> R_Hip               # 0
+    [1, 2],     # R_Hip -> R_Knee               # 1
+    [2, 3],     # R_Knee -> R_Ankle             # 2
+    [0, 4],     # Pelvis -> L_Hip               # 3
+    [4, 5],     # L_Hip -> L_Knee               # 4
+    [5, 6],     # L_Knee -> L_Ankle             # 5
+    [0, 7],     # Pelvis -> Torso               # 6
+    [7, 8],     # Torso -> Neck                 # 7
+    [8, 9],     # Neck -> Head                  # 8
+    [7, 10],    # Torso -> R_Shoulder           # 9       
+    [10, 11],   # R_Shoulder -> R_Elbow         # 10
+    [11, 12],   # R_Elbow -> R_Wrist            # 11
+    [7, 13],    # Torso -> L_Shoulder           # 12
+    [13, 14],   # L_Shoulder -> L_Elbow         # 13
+    [14, 15]    # L_Elbow -> L_Wrist            # 14
+]).T
+
+
+
+
+original:
+BONE_KEYS = [
+        'crl_hips__C',        #(Hips), Pelvis           # 0
+        #'crl_spine__C',
+        'crl_spine01__C',     #(Spine)                  # 1
+        ##'crl_shoulder__L', 
+        'crl_arm__L',         #(LeftShoulder)           # 2
+        'crl_foreArm__L',     #(LeftElbow)              # 3
+        'crl_hand__L',        #(LeftWrist)              # 4
+        'crl_neck__C',        #(Neck)                   # 5
+        'crl_Head__C',        #(Head)                   # 6
+        ##'crl_eye__L',       #(LeftEye) *Optional
+        ##'crl_eye__R',       #(RightEye) *Optional
+        #'crl_shoulder__R',
+        'crl_arm__R',         #(RightShoulder)          # 7
+        'crl_foreArm__R',     #(RightElbow)             # 8
+        'crl_hand__R',        #(RightWrist)             # 9
+        'crl_thigh__L',       #(LeftHip)                # 10
+        'crl_leg__L',         #(LeftKnee)               # 11
+        #'crl_foot__L',        #(LeftAnkle)              # 12
+        'crl_toe__L',         #(LeftToe)                # 13
+        'crl_thigh__R',       #(RightHip)               # 14
+        'crl_leg__R',         #(RightKnee)              # 15
+        'crl_foot__R']        #(RightAnkle)             # 16
+        #'crl_toe__R']         #(RightToe)               # 17
+
+ # kinetic_tree = np.array([
+#     [0, 1], # Pelvis -> L_Hip
+#     [0, 2], # Pelvis -> R_Hip
+#     [0, 3], # Pelvis -> Spine1
+#     [1, 4], # L_Hip -> L_Knee
+#     [2, 5], # R_Hip -> R_Knee
+#     [3, 6], # Spine1 -> Spine2
+#     [4, 7], # L_Knee -> L_Ankle
+#     [5, 8], # R_Knee -> R_Ankle
+#     [7, 9], # L_Ankle -> L_Foot
+#     [8, 10], # R_Ankle -> R_Foot
+#     [6, 11], # Spine2 -> Neck
+#     [11, 12], # Neck -> Head
+#     [11, 13], # Neck -> L_Shoulder
+#     [11, 14], # Neck -> R_Shoulder
+#     [13, 15], # L_Shoulder -> L_Elbow
+#     [14, 16], # R_Shoulder -> R_Elbow
+#     [15, 17], # L_Elbow -> L_Wrist
+#     [16, 18], # R_Elbow -> R_Wrist
+#     [17, 19], # L_Wrist -> L_Hand
+#     [18, 20], # R_Wrist -> R_Hand
+# ]).T

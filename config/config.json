@@ -1,0 +1,118 @@
+{
+    "paths": {
+        "train_data_path": "/workspace/data/dataset/train/dataset/labels/",
+        "train_image_path": "/workspace/data/dataset/train/dataset/img/",
+        "eval_data_path": "/workspace/data/dataset/test/dataset/labels/",
+        "eval_image_path": "/workspace/data/dataset/test/dataset/img/",
+        "output_path": "/workspace/data/model_output"
+    },
+    "models": {
+        "configs": [
+            "/workspace/data/model_output/workspace_pre__augs_0.0001_2023-12-20_14-26-53/model_config.yaml"
+        ],
+        "weights": [
+            "/workspace/data/model_output/workspace_pre__augs_0.0001_2023-12-20_14-26-53/model_final.pth"
+        ]
+    },
+    "training_config": {
+        "gpu_ids": [
+            0
+        ],
+        "with_pretrain": true,
+        "with_resume": false,
+        "with_cudnn_bm": true,
+        "with_keypoints": true,
+        "with_segmentation": true,
+        "model_backbone_freeze_at": 0
+    },
+    "training_params": {
+        "num_classes": 1,
+        "input_format": "RGB",
+        "input_mask_format": "bitmask",
+        "max_obj_distance": 40,
+        "test_loss_validation_period": 200000,
+        "test_tasks": ["bbox", "keypoints"],
+        "test_keypoint_oks_sigmas": [
+            0.05,
+            0.05,
+            0.1,
+            0.1,
+            0.05,
+            0.1,
+            0.1,
+            0.05,
+            0.05,
+            0.05,
+            0.05,
+            0.1,
+            0.1,
+            0.05,
+            0.1,
+            0.1
+        ],
+        "solver_max_iter": 100000,
+        "test_eval_period": 2500,
+        "solver_checkpoint_period": 5000,
+        "solver_images_per_batch": 5,
+        "solver_base_learning_rate": [
+            0.00001
+        ],
+        "solver_steps": [
+            0.8,
+            0.95,
+            0.975
+        ],
+        "dataloader_num_workers": 4,
+        "input_image_min_train_size":256,
+        "input_image_max_train_size":2048,
+        "input_image_min_test_size":256,
+        "input_image_max_test_size":2048,
+        "roi_heads_batch_size_per_image": [
+            256
+        ],
+        "anchor_generator_sizes": [
+            [   
+                16,
+                32,
+                64,
+                128,
+                192,
+                256
+            ]
+        ],
+        "anchor_generator_aspect_ratio": [
+            [
+                2.0
+            ]
+        ]
+    },
+    "keypoint_params": {
+        "num_keypoints": 16,
+        "roi_kp_head_norm_loss_by_visible_kps": true,
+        "roi_kp_heads_loss_weight": 1.0,
+        "roi_kp_head_pooler_type": "ROIAlignV2",
+        "bone_key_names": [
+            "crl_hips__C",  
+            "crl_thigh__R",      
+            "crl_leg__R",         
+            "crl_foot__R",       
+            "crl_thigh__L",      
+            "crl_leg__L",         
+            "crl_foot__L",        
+            "crl_spine01__C",     
+            "crl_neck__C",       
+            "crl_Head__C",        
+            "crl_arm__R",         
+            "crl_foreArm__R",     
+            "crl_hand__R",        
+            "crl_arm__L",         
+            "crl_foreArm__L",     
+            "crl_hand__L"      
+        ]
+    },
+    "augmentation_params": {
+        "with_AUG": true,
+        "random_flip_orientation": "horizontal",
+        "input_aug_zoom": [0.25, 0.125]
+    }
+}
