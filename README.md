@@ -1,25 +1,51 @@
-# Implementation of the absolute HPE pipeline in the master thesis of Kerim Turacan
+# Implementation of the absolute HPE pipeline used in the master thesis of Kerim Turacan
 
-This include thes dataset creation and the 2step approach of detecing the 2D pose in an spherical projected LiDAR image and lifting into 3D.
+This repository includes the synthetic dataset creation using the CARLA simulator, and the 2-step approach of detecting human body joints in LiDAR data, which are transfomed to a image-like format, i.e. Spherical Projection Image. 
+
 The CARLA simulator is used for synthetic data generation (see Sec. 1), where AV scences are created within the realistic UE4 simulation environments.
-The most important actors are spawnable and configureable pedestrians and cars. On one car in each scene a (semenatic) LiDAR is attached, from which the dataset used in this work was created.
+The most important actors are spawnable and configureable pedestrians and cars. On one car in each scene a (semenatic) LiDAR is attached, used for data recording.
 The autopilot feature of actors in CARLA make them move autonomously at (mostly) high realsism.
-However, with the used CARLA version 0.9.13 the poses of pedestrians were often very similar with the arms pointing straight downwards. Natural mutual interaction could not be observed, as the goal of the autopilot feature is just to move to the target distination; other interactions are not implemented by default.
+However, with the used CARLA version 0.9.13 the poses of pedestrians were often very similar with the arms pointing straight downwards. Natural mutual interaction could not be observed, as the autopilot feature only consideres the fastest colission-free path to the target distination; other interactions are not implemented by default.
 It could also be observed that some persons form T-poses.
-Additional problems has been encoutered in the synchronisation of the CARLA world state data and the measurments of the utilized LiDAR sensor. This resulted in joint locations of pedestrians not being consistent with the sensor's point cloud. When projected to an spherical image, the keypoints were sometimes not part of the target instance. Unfortunately, this problem seemed to be persistent with other sensor types. Later version may solve this issues as this drastically worsens the quality of the ground-truth keypoint annotations. To counter-act, a thresholding was implemented and frames discarded if this problem occured.
+Additional problems has been encoutered in the synchronisation of the CARLA world state data and the measurments of the utilized LiDAR sensor. This resulted in joint locations of pedestrians not being consistent with the sensor's point cloud. When projected to an spherical image, the keypoints were sometimes not part of the target instance. Unfortunately, this problem seemed to be persistent with other sensor types. Later versions may solve this issues as this drastically worsens the quality of the ground-truth keypoint annotations. To counteract, a thresholding was implemented and frames discarded if this problem occured.
 
-After creating the labeled LiDAR dataset, the LiDAR data gets projected onto an image plane using Spherical Projection (see utils/fc_matrix_and_projection_calculation.py). The Spherical Projection Image is dependent on the projection matrix, which defines the granularity of the projection and the employed FOV. Ideally a high FOV can be used first, from which a subimage can be then cropped out, which yields the desired FOV.
+After creating the labeled LiDAR dataset, the LiDAR data gets projected onto an image plane using Spherical Projection (see utils/fc_matrix_and_projection_calculation.py). The Spherical Projection Image is dependent on the projection matrix $K$, which defines the granularity of the projection and the employed FOV. Ideally a high FOV can be used first, from which a subimage can be then cropped out, which yields the desired FOV.
+
+The spherical projection is defined by:
+```math
+\begin{equation}
+    \underbrace{%
+        \begin{bmatrix}
+            \vec{u} \\ \vec{v} \\ \vec{1_N} \\
+        \end{bmatrix}
+    }_{U}=
+    \underbrace{%
+        \begin{bmatrix}
+            \frac{1}{\Delta \phi} & 0 & c_{\phi}\\
+            0 & -\frac{1}{\Delta \theta} & c_{\theta}\\
+            0 & 0 & 1
+        \end{bmatrix}
+    }_{K} \cdot
+    \underbrace{
+        \begin{bmatrix}
+            \vec{\phi} \\ \vec{\theta} \\ \vec{1_N}\\
+        \end{bmatrix}
+    }_{X}
+    \label{eq:Dataset_spherical_projection_eq}
+\end{equation}
+```
 
 The Spherical Projection Image is used as input of a 2D estimator. Here, the Detectron2 keypoint_rcnn_R_50_FPN is used.
-Feature extraction over the input image was performed using a ResNet-50-FPN backbone that yields a set of convolutional feature maps to extract the ROIs. A box head performs object classification and bounding box regression using the feature maps provided by the backbone. An optional mask head yields instance segmentation masks, and a keypoint detection head predicts specific key points on the objects detected by the box head network. This keypoint head is designed to predict the 16 keypoints delineated by the adapted custom CARLA skeleton structure.
+Feature extraction over the input image was performed using a ResNet-50-FPN backbone that yields a set of convolutional feature maps to extract the ROIs. A box head performs object classification and bounding box regression using the feature maps provided by the backbone. An optional mask head returns instance segmentation masks, and a keypoint detection head predicts specific keypoints on the objects detected by the box head network. This keypoint head is designed to predict the 16 keypoints delineated by the adapted custom CARLA skeleton structure.
 
-The 2D ouputs are then passed to a lfting network, which aims to lift the 2D ouputs of the 2D estimator into 3D. The network consists of 2 regression networks, which predict the scalar root distance r_Root and the relative distance pose r_rel. the 3D pose can be recovered by:
+The 2D outputs are then passed to a lifting network, which aims to lift the 2D keypoint outputs of the 2D estimator into 3D. The network consists of 2 regression networks, which predict a scalar root distance $r_{Root}$ (distance to the root joint, typically the pelvis joint) and a relative distance pose $r_{rel}$ (distance vector of all joints relative to the root joint). \
+The 3D pose can be recovered by:
 ```math
  (1_N \cdot r_{Root} + r_{rel}) \cdot \text{UDV}
  ```
-UDV is the unit direction vector including the normalized cartesian componenents of the 2D joints. This is acchieved by converting the 2D pixel locations to spherical coordinates by inverse spherical projection and then the unit direction vectors are computed an concatenated to build UDV.
+UDV is a unit direction vector including the normalized cartesian components of projected 2D joints. The 2D pixel locations are converted to spherical coordinates by inverse spherical projection, from which the the unit direction vectors are computed an concatenated to build UDV.
 
-With a smaller dataset available and faster convergence an better absolute translation prediction, onto the UDV inputs the median depth of the instance segmented point cloud can be appended. the instance segmention information comes from the mask head of the 2D estimator output.
+When using a smaller dataset and faster convergence for the absolute translation prediction is targeted, the median depth of the instance segmented point cloud can be appended to the UDV inputs. The instance segmention information comes from the mask head of the 2D estimator output.
 
 The loss function combines pose errors, distance errors and joint relation constraints.
 
@@ -58,7 +84,7 @@ The specific CARLA joint names extracted are:
 ]
 ```
 
-These joints are used to construct the connected pose represntation. The underlying joint connectons foming the "bones" is defined by:
+These joints are used to construct the connected pose representation. The underlying joint connectons forming the "bones" is defined by:
 ```
 KINTREE_TABLE = np.array([ 
     [0, 1],     # Pelvis -> R_Hip               # 0
