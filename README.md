@@ -1,6 +1,7 @@
-# Implementation of the absolute HPE pipeline used in the master thesis of Kerim Turacan
+# Implementation of the absolute HPE pipeline
 
-This repository includes the synthetic dataset creation using the CARLA simulator, and the 2-step approach of detecting human body joints in LiDAR data, which are transfomed to a image-like format, i.e. Spherical Projection Image. 
+**This code repository is based on the work of the Master Thesis of Kerim Turacan, submitted on March 5, 2024.**
+It includes the synthetic dataset creation using the CARLA simulator, and the 2-step approach of detecting human body joints in LiDAR data, which are transfomed to an image-like format, i.e. Spherical Projection Image. 
 
 The CARLA simulator is used for synthetic data generation (see Sec. 1), where AV scences are created within the realistic UE4 simulation environments.
 The most important actors are spawnable and configureable pedestrians and cars. On one car in each scene a (semenatic) LiDAR is attached, used for data recording.
@@ -9,31 +10,7 @@ However, with the used CARLA version 0.9.13 the poses of pedestrians were often 
 It could also be observed that some persons form T-poses.
 Additional problems has been encoutered in the synchronisation of the CARLA world state data and the measurments of the utilized LiDAR sensor. This resulted in joint locations of pedestrians not being consistent with the sensor's point cloud. When projected to an spherical image, the keypoints were sometimes not part of the target instance. Unfortunately, this problem seemed to be persistent with other sensor types. Later versions may solve this issues as this drastically worsens the quality of the ground-truth keypoint annotations. To counteract, a thresholding was implemented and frames discarded if this problem occured.
 
-After creating the labeled LiDAR dataset, the LiDAR data gets projected onto an image plane using Spherical Projection (see utils/fc_matrix_and_projection_calculation.py). The Spherical Projection Image is dependent on the projection matrix $K$, which defines the granularity of the projection and the employed FOV. Ideally a high FOV can be used first, from which a subimage can be then cropped out, which yields the desired FOV.
-
-The spherical projection is defined by:
-```math
-\begin{equation}
-    \underbrace{%
-        \begin{bmatrix}
-            \vec{u} \\ \vec{v} \\ \vec{1_N} \\
-        \end{bmatrix}
-    }_{U}=
-    \underbrace{%
-        \begin{bmatrix}
-            \frac{1}{\Delta \phi} & 0 & c_{\phi}\\
-            0 & -\frac{1}{\Delta \theta} & c_{\theta}\\
-            0 & 0 & 1
-        \end{bmatrix}
-    }_{K} \cdot
-    \underbrace{
-        \begin{bmatrix}
-            \vec{\phi} \\ \vec{\theta} \\ \vec{1_N}\\
-        \end{bmatrix}
-    }_{X}
-    \label{eq:Dataset_spherical_projection_eq}
-\end{equation}
-```
+After creating the labeled LiDAR dataset, the LiDAR data gets projected onto an image plane using Spherical Projection (see utils/fc_matrix_and_projection_calculation.py). The Spherical Projection Image is dependent on the projection matrix, which defines the granularity of the projection and the employed FOV. Ideally a high FOV can be used first, from which a subimage can be then cropped out, which yields the desired FOV. 
 
 The Spherical Projection Image is used as input of a 2D estimator. Here, the Detectron2 keypoint_rcnn_R_50_FPN is used.
 Feature extraction over the input image was performed using a ResNet-50-FPN backbone that yields a set of convolutional feature maps to extract the ROIs. A box head performs object classification and bounding box regression using the feature maps provided by the backbone. An optional mask head returns instance segmentation masks, and a keypoint detection head predicts specific keypoints on the objects detected by the box head network. This keypoint head is designed to predict the 16 keypoints delineated by the adapted custom CARLA skeleton structure.
