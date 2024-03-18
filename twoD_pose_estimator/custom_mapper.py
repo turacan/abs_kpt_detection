@@ -6,7 +6,9 @@ from fvcore.transforms.transform import (
 from detectron2.data.transforms.transform import ResizeTransform, NoOpTransform
 from detectron2.data import detection_utils as utils
 
-from model_config import KINTREE_TABLE
+import sys
+sys.path.append("/workspace/repos")
+from twoD_pose_estimator.model_config import KINTREE_TABLE
 
 from itertools import combinations
 from PIL import Image 
@@ -146,7 +148,6 @@ class RandomHorizonZoom(Augmentation):
         ch = self.crop_size_    # crop height
         return int(h * ch + 0.5), w
 
-import sys
 import warnings
 
 def custom_mapper(dataset_dict, cfg, is_train=True):

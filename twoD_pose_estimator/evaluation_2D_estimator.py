@@ -4,7 +4,9 @@ from detectron2.data import DatasetCatalog, MetadataCatalog
 from detectron2.utils.visualizer import Visualizer
 from detectron2.utils.visualizer import ColorMode
 
-from custom_mapper import custom_mapper
+import sys
+sys.path.append("/workspace/repos")
+from twoD_pose_estimator.custom_mapper import custom_mapper
 from data_generation.save_dataset_detectron_format import calculate_projection_matrix
 
 import cv2
@@ -25,7 +27,6 @@ import numpy as np
 from scipy.optimize import linear_sum_assignment
 from detectron2.structures import Boxes
 import matplotlib.pyplot as plt
-
 
 from matplotlib.legend_handler import HandlerBase
 import matplotlib.lines as mlines
@@ -239,7 +240,7 @@ def bbox_points_in_limits(im, bbox, keypoints, max_offset_pct, default_value):
 
 
 try:
-    with open("config/config.json", 'r') as f:
+    with open("/workspace/repos/twoD_pose_estimator/config/config.json", 'r') as f:
         cfg = json.load(f)
 except Exception as ex:
     sys.exit("provided cfg file path not valid")
@@ -254,8 +255,8 @@ cfg = setup_config(cfg, params_list[0])
 cfg.defrost()
 
 # Change the config
-cfg.MODEL.WEIGHTS = "/workspace/data/model_output/workspace_pre__augs_0.0001_2023-12-20_14-26-53/model_final.pth"
-#/workspace/data/model_output/workspace_pre__augs_2e-05_2023-06-26_22-08-55/model_0071999.pth"
+cfg.MODEL.WEIGHTS = "/workspace/data/model_weights/twoD_pose_estimator/workspace_pre__augs_0.0001_2023-12-20_14-26-53/model_final.pth"
+
 cfg.MODEL.ROI_HEADS.SCORE_THRESH_TEST = 0.7  # set the testing threshold for this model
 cfg.MODEL.DEVICE = "cpu"    # cuda
 #cfg.INPUT.AUG_ZOOM_TRAIN = [1/4]    # 1/4: 256 channels, 1/8: 128 channels
@@ -268,13 +269,12 @@ predictor = DefaultPredictor(cfg)
 from registerDatasetCatalog import register_data
 register_data(input_path= "/workspace/data/dataset")
 
-IOU_THRESH = 0.75
+IOU_THRESH = 0.5
 visu_flag = False
 splittype = "test"
 val_dicts = DatasetCatalog.get(f"carla/{splittype}")
 val_metadata = MetadataCatalog.get(f"carla/{splittype}")
 
-MPJPE_list = []
 pred_kpt_list = []
 gt_kpt_list = []
 box_size_list = []
@@ -321,17 +321,17 @@ for d in tqdm(val_dicts[:]):
         # for kpt in d_['annotations']:
         #     print(len(kpt['keypoints']))
         # concatenate image Horizontally
-        Hori = np.concatenate((v.get_image(), v_gt.get_image()), axis=1)
+        Hori = np.concatenate((v.get_image(), v_gt.get_image()), axis=1)    # pred top, gt bottom
         
         # concatenate image Vertically
         Verti = np.concatenate((v.get_image(), v_gt.get_image()), axis=0)
         Verti = cv2.resize(Verti, (2048, 1024), interpolation = cv2.INTER_AREA)
 
-        cv2.namedWindow('VERTICAL', cv2.WINDOW_AUTOSIZE)
+        cv2.namedWindow('Pred (Top) vs GT (Bottom)', cv2.WINDOW_AUTOSIZE)
         imS = cv2.resize(Verti, (1500, 750))   
         #cv2.resizeWindow("VERTICAL", 1000, 1000)
         # Naming a window
-        cv2.imshow('VERTICAL', imS)
+        cv2.imshow('Pred (Top) vs GT (Bottom)', imS)
         cv2.waitKey(0)
 
 if visu_flag:
@@ -342,8 +342,8 @@ gt_kpt_np = np.array(gt_kpt_list, dtype=np.float16)
 box_size_np = np.array(box_size_list, dtype=np.float16)
 
 # Calculate mean per joint position error (MPJPE)
-MPJPE_list = calculate_error_scale_inv_mpjpe(pred_kpt_np, gt_kpt_np, box_size_np)
-mpjpe = np.nanmean(MPJPE_list, axis=0)
+PJPE_arr= calculate_error_scale_inv_mpjpe(pred_kpt_np, gt_kpt_np, box_size_np) #MPJPE_list
+mpjpe = np.nanmean(PJPE_arr, axis=0)
 MPJPE_skalar = np.nanmean(mpjpe)
 
 # Calculate Percentage of correct keypoints
@@ -395,7 +395,7 @@ for k, v in joint_list.items():
     name.append(f'{k}: {v}')
 
 df_MPJPE_boxplot = pd.DataFrame(
-    MPJPE_list,
+    PJPE_arr,
     columns=name
 )
 
@@ -409,7 +409,7 @@ fig2.set_size_inches(18.5, 10.5)
 ax = fig2.add_subplot()
 
 #increase font size of all elements
-sns.boxplot(data=df_MPJPE_boxplot, fliersize=2) 
+sns.boxplot(data=df_MPJPE_boxplot, fliersize=2, zorder=0) 
 ax.set_title(f"Per Joint Position Error: Scale-Invariant Pixel Error Relative to BBOX Diagonal, IOU\u2265{IOU_THRESH}", fontsize=20)
 plt.xticks(fontsize=12, rotation=45)
 ax.set_ylabel('Error', fontsize=16)
@@ -421,7 +421,7 @@ plt.grid(axis='y', linestyle='--', linewidth=0.5)
 plt.yticks([i * 0.1 for i in range(11)])
 
 ax.scatter(x=range(0,16), y=df_MPJPE['Error'], marker="x", linewidths=2, facecolor='red')
-ax.axhline(y=MPJPE_skalar, linewidth=2, color='b')
+ax.axhline(y=MPJPE_skalar, linewidth=2, color='b', zorder=15)
 
 
 list_marker    = ["_", "x"]
@@ -442,61 +442,3 @@ plt.show()
 # IOU=0.5, total of 1107 person objects are evaluated 
 
 # IOU=0.75, total of 611 person objects are evaluated 
-
-
-
-    # # # # make keypoint depth logic
-    # # # max_offset_pct = 0.1
-    # # # default_value = None
-    # # # depth_values_list = []
-    # # # for bbox, keypoints in zip(gt_box.astype(int), pred_kpt_list):
-    # # #     depth_values = bbox_points_in_limits(im[...,[0,2]], bbox, keypoints, max_offset_pct, default_value)
-    # # #     depth_values_list.append(depth_values)
-
-    # # # depth_values_arr = np.array(depth_values_list)
-
-    # # # convert u,v-coord in phi theta
-    # # K, _ = calculate_projection_matrix(height=im.shape[0], width=im.shape[1], fov_degrees=45)
-    # # u,v = gt_kpts[0,0].astype(int)
-    # # # temp = gt_kpts[0].astype(int)
-    # # # u = temp[:, 0]
-    # # # v = temp[:, 1]
-    # # depth = 1#im[v,u,0] * 250
-    # # #depth = depth_values_arr[0]
-    # # temp_kpt = np.hstack((copy.deepcopy(gt_kpts[0]).squeeze(), np.ones((16,1))))
-    # # phi_theta = np.matmul(np.linalg.inv(K) , temp_kpt.T)
-    # # phi, theta = phi_theta[0], phi_theta[1]
-    # # x = depth * np.sin(np.pi/2-theta) * np.cos(phi) 
-    # # y = depth * np.sin(np.pi/2-theta) * np.sin(phi)
-    # # z = depth * np.cos(np.pi/2-theta)
-
-    # # jnts_skeleton_gt = np.stack([x,y,z], axis=-1)
-
-    # # temp_kpt = np.hstack((copy.deepcopy(pred_kpts[0]).squeeze(), np.ones((16,1))))
-    # # u,v = pred_kpts[0,0].astype(int)
-    # # # temp = pred_kpts[0].astype(int)
-    # # # u = temp[:, 0]
-    # # # v = temp[:, 1]
-    # # depth = 1#im[v,u,0] * 250
-    # # phi_theta = np.matmul(np.linalg.inv(K) , temp_kpt.T)
-    # # phi, theta = phi_theta[0], phi_theta[1]
-    # # x = depth * np.sin(np.pi/2-theta) * np.cos(phi) 
-    # # y = depth * np.sin(np.pi/2-theta) * np.sin(phi)
-    # # z = depth * np.cos(np.pi/2-theta)
-
-    # # jnts_skeleton_pred= np.stack([x,y,z], axis=-1)
-    # # np.rad2deg(phi)
-    # # import open3d as o3d
-    # # from utils.spherical import o3d_draw_skeleton
-
-    # # # fig = plt.figure(figsize=(12, 12))
-    # # # ax = fig.add_subplot(projection='3d')
-    # # # ax.scatter(jnts_skeleton[:,0], jnts_skeleton[:,1], jnts_skeleton[:,2])
-    # # # plt.show()
-
-
-    # # line_set_gt, joints_gt = o3d_draw_skeleton(jnts_skeleton_gt, kintree_table)
-    # # line_set_pred, joints_pred = o3d_draw_skeleton(jnts_skeleton_pred, kintree_table, color_set="CMY")
-    # # coord_mesh = o3d.geometry.TriangleMesh.create_coordinate_frame(size=0.2)
-    # # #o3d.visualization.draw_geometries([line_set_gt, joints_gt, line_set_pred, joints_pred])
-    # # #o3d.visualization.draw_geometries([line_set_gt, joints_gt])#, coord_mesh])

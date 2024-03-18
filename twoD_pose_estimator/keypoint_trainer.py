@@ -6,10 +6,13 @@ import copy
 
 from detectron2.engine import DefaultTrainer
 from detectron2.evaluation import COCOEvaluator
-from custom_mapper import custom_mapper, evaluator_mapper
-from eval.custom_coco_eval import COCOCustomEvaluator
 
-from old_train_files.hooks import LossEvalHook
+import sys
+sys.path.append("/workspace/repos")
+from twoD_pose_estimator.custom_mapper import custom_mapper, evaluator_mapper, RandomHorizonZoom, Resize
+from twoD_pose_estimator.eval.custom_coco_eval import COCOCustomEvaluator
+
+#from old_train_files.hooks import LossEvalHook
 from detectron2.data import (
     DatasetMapper,
     DatasetCatalog,
@@ -19,8 +22,6 @@ from detectron2.data import (
 from torch.utils.data import Dataset
 from detectron2.data import detection_utils as utils
 import detectron2.data.transforms as T
-
-from custom_mapper import RandomHorizonZoom, Resize
 
 
 # class FilteredDataset(Dataset):
@@ -142,12 +143,12 @@ if __name__ == "__main__":
     meta_data = MetadataCatalog.get(f"carla/{splittype}")
 
     try:
-        with open("config/config.json", 'r') as f:
+        with open("twoD_pose_estimator/config/config.json", 'r') as f:
             cfg = json.load(f)
     except Exception as ex:
         sys.exit("provided cfg file path not valid")
 
-    from start_training import setup_parameters, setup_config
+    from twoD_pose_estimator.start_training import setup_parameters, setup_config
     # create parameter sweeping list
     params_list = setup_parameters(cfg=cfg)
     # Setup detectron2 training config
@@ -158,7 +159,7 @@ if __name__ == "__main__":
     for d in tqdm(dataset_dicts_[24:]):#random.sample(dataset_dicts_, 5):  # 109, 67
         d_ = copy.deepcopy(d)
         #dset = custom_test_dataset_transform(d_, cfg)
-        d_ = evaluator_mapper(d_, cfg, is_train=True)
+        d_ = custom_mapper(d_, cfg, is_train=True)
         # dset['image'] = d_ ['image']
         # d_ = dset
         img = np.uint8(255*d_["image"].numpy().transpose(1, 2, 0))

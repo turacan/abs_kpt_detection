@@ -5,8 +5,9 @@ import json
 import numpy as np
 
 #from custom_mapper import custom_mapper, get_dataset_dicts
-
-from model_config import KEYPOINT_NAMES, KEYPOINT_CONNECTION_RULES, KEYPOINT_FLIP_MAP
+import sys
+sys.path.append("/workspace/repos/")
+from twoD_pose_estimator.model_config import KEYPOINT_NAMES, KEYPOINT_CONNECTION_RULES, KEYPOINT_FLIP_MAP
 
 
 def get_dataset_dicts(path: str):
@@ -38,7 +39,6 @@ if __name__ == '__main__':
     import cv2
     from detectron2.utils.visualizer import Visualizer
     from detectron2.utils.visualizer import ColorMode
-    import sys
 
     # try:
     #     with open("config/config.json", 'r') as f:

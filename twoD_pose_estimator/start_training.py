@@ -1,6 +1,8 @@
-from registerDatasetCatalog import register_data
-from keypoint_trainer import CustomTrainer
-from model_config import KEYPOINT_NAMES, KEYPOINT_FLIP_MAP
+import sys
+sys.path.append("/workspace/repos")
+from twoD_pose_estimator.registerDatasetCatalog import register_data
+from twoD_pose_estimator.keypoint_trainer import CustomTrainer
+from twoD_pose_estimator.model_config import KEYPOINT_NAMES, KEYPOINT_FLIP_MAP
 import json
 import sys
 import os
@@ -333,7 +335,7 @@ def start_trainings(cfg: dict):
 
 if __name__ == "__main__":
     try:
-        with open("config/config.json", 'r') as f:
+        with open("twoD_pose_estimator/config/config.json", 'r') as f:
             cfg = json.load(f)
     except Exception as ex:
         sys.exit("provided cfg file path not valid")
